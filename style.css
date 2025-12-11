@@ -220,6 +220,28 @@ body {
   cursor: pointer;
 }
 
+.task-done-btn {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.25);
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.task-done-btn:hover {
+  background: rgba(0,0,0,0.35);
+}
+
+
 /* Modal */
 .modal-overlay {
   position: fixed;
