@@ -388,11 +388,57 @@
         projectListEl.appendChild(opt);
       }
     }
+// プロジェクト内でタスクが重ならないようにレーンを振る
+    function assignLanesForProject(tasks) {
+      // 開始日順にソート
+      const sorted = [...tasks].sort((a, b) => {
+        const as = toDate(a.task_date);
+        const bs = toDate(b.task_date);
+        if (!as || !bs) return 0;
+        return as - bs;
+      });
+    
+      const laneLastEnd = []; // 各レーンの「最後の終了日」
+      let maxLaneIndex = -1;
+    
+      for (const t of sorted) {
+        const start = toDate(t.task_date);
+        const end   = toDate(t.end_date || t.task_date);
+        if (!start || !end) {
+          t.__lane = 0;
+          continue;
+        }
+    
+        let laneIndex = -1;
+    
+        // 既存レーンのどこかに置けるか？
+        for (let i = 0; i < laneLastEnd.length; i++) {
+          // このレーンの最後の終了日より後に始まるなら OK
+          if (start > laneLastEnd[i]) {
+            laneIndex = i;
+            laneLastEnd[i] = end;
+            break;
+          }
+        }
+    
+        // どのレーンともかぶる → 新しいレーンを作る
+        if (laneIndex === -1) {
+          laneIndex = laneLastEnd.length;
+          laneLastEnd.push(end);
+        }
+    
+        t.__lane = laneIndex;
+        if (laneIndex > maxLaneIndex) maxLaneIndex = laneIndex;
+      }
+    
+      // レーン数（0始まりなので +1）
+      return maxLaneIndex + 1;
+    }
 
     function render(tasks) {
       ganttGrid.innerHTML = "";
       populateProjectList(tasks);
-
+    
       const valid = tasks.filter(t => t.task_date);
       if (!valid.length) {
         const div = document.createElement("div");
@@ -401,13 +447,35 @@
         ganttGrid.appendChild(div);
         return;
       }
-
-      const projectNames = Array.from(
-        new Set(valid.map(t => (t.project || "(no project)").trim()))
-      ).sort((a, b) => a.localeCompare(b, "ja"));
-
-      projectNames.forEach(name => getProjectColor(name));
-
+    
+      // 1) プロジェクトごとにタスクをグルーピング
+      const projectGroups = {};
+      for (const t of valid) {
+        const name = (t.project || "(no project)").trim();
+        if (!projectGroups[name]) projectGroups[name] = [];
+        projectGroups[name].push(t);
+      }
+    
+      const projectNames = Object.keys(projectGroups)
+        .sort((a, b) => a.localeCompare(b, "ja"));
+    
+      // 2) プロジェクトごとにレーンを割り当て ＋ 列情報を作る
+      const projectMeta = {}; // name -> { startCol, laneCount }
+      let totalDataCols = 0;
+    
+      for (const name of projectNames) {
+        const tasksForProject = projectGroups[name];
+        const laneCount = assignLanesForProject(tasksForProject); // ← さっきの関数
+    
+        const startCol = 2 + totalDataCols; // 1列目は日付
+        projectMeta[name] = { startCol, laneCount };
+        totalDataCols += laneCount;
+    
+        // 色もここで確定させておく
+        getProjectColor(name);
+      }
+    
+      // 日付レンジ（min〜max）＋ 今日を上に持ってくる
       let minStart = null;
       let maxEnd = null;
       for (const t of valid) {
@@ -424,34 +492,39 @@
         ganttGrid.appendChild(div);
         return;
       }
-
+    
       const today = toDate(todayISO());
       let start = minStart;
       if (today >= minStart && today <= maxEnd) start = today;
-
+    
       const days = dateRange(start, maxEnd);
-
+    
+      // CSS Grid の定義
       ganttGrid.style.gridTemplateColumns =
-        `120px repeat(${projectNames.length}, minmax(110px, 1fr))`;
+        `120px repeat(${totalDataCols}, minmax(110px, 1fr))`;
       ganttGrid.style.gridTemplateRows =
         `40px repeat(${days.length}, 32px)`;
-
+    
+      // ヘッダー: 日付
       const dateHeader = document.createElement("div");
       dateHeader.className = "gantt-header-cell date-header";
       dateHeader.textContent = "Date";
       dateHeader.style.gridColumn = "1 / 2";
       dateHeader.style.gridRow = "1 / 2";
       ganttGrid.appendChild(dateHeader);
-
-      projectNames.forEach((name, idx) => {
+    
+      // ヘッダー: プロジェクト（レーンをまとめて1見出しに）
+      for (const name of projectNames) {
+        const meta = projectMeta[name];
         const cell = document.createElement("div");
         cell.className = "gantt-header-cell";
         cell.textContent = name;
-        cell.style.gridColumn = (idx + 2) + " / " + (idx + 3);
+        cell.style.gridColumn = `${meta.startCol} / ${meta.startCol + meta.laneCount}`;
         cell.style.gridRow = "1 / 2";
         ganttGrid.appendChild(cell);
-      });
-
+      }
+    
+      // 日付ラベル列
       days.forEach((dayStr, i) => {
         const cell = document.createElement("div");
         cell.className = "gantt-day-cell";
@@ -460,57 +533,66 @@
         cell.style.gridRow = (i + 2) + " / " + (i + 3);
         ganttGrid.appendChild(cell);
       });
-
+    
+      // 背景スロット（全プロジェクト×全レーン分）
       days.forEach((_, i) => {
-        projectNames.forEach((_, j) => {
-          const slot = document.createElement("div");
-          slot.className = "gantt-slot";
-          slot.style.gridColumn = (j + 2) + " / " + (j + 3);
-          slot.style.gridRow = (i + 2) + " / " + (i + 3);
-          ganttGrid.appendChild(slot);
-        });
+        for (const name of projectNames) {
+          const meta = projectMeta[name];
+          for (let lane = 0; lane < meta.laneCount; lane++) {
+            const col = meta.startCol + lane;
+            const slot = document.createElement("div");
+            slot.className = "gantt-slot";
+            slot.style.gridColumn = `${col} / ${col + 1}`;
+            slot.style.gridRow = (i + 2) + " / " + (i + 3);
+            ganttGrid.appendChild(slot);
+          }
+        }
       });
-
+    
+      // タスクバーを縦方向に配置（レーンごとに横ずれ）
       for (const task of valid) {
         const projectName = (task.project || "(no project)").trim();
-        const colIdx = projectNames.indexOf(projectName);
-        if (colIdx === -1) continue;
-
+        const meta = projectMeta[projectName];
+        if (!meta) continue;
+    
+        const laneIndex = task.__lane || 0;
+        const column = meta.startCol + laneIndex;
+    
         const s = toDate(task.task_date);
         const e = toDate(task.end_date || task.task_date);
         if (!s || !e) continue;
-
+    
         if (e < toDate(days[0]) || s > toDate(days[days.length - 1])) continue;
-
+    
         let startIdx = days.findIndex(d => toDate(d) >= s);
         if (startIdx === -1) startIdx = 0;
         let endIdx = days.length - 1;
         for (let i = days.length - 1; i >= 0; i--) {
           if (toDate(days[i]) <= e) { endIdx = i; break; }
         }
-
+    
         const pill = document.createElement("div");
         pill.className = "task-pill";
         pill.style.background = getProjectColor(projectName);
-        pill.style.gridColumn = (colIdx + 2) + " / " + (colIdx + 3);
-        pill.style.gridRow = (startIdx + 2) + " / " + (endIdx + 3);
+        pill.style.gridColumn = `${column} / ${column + 1}`;
+        pill.style.gridRow = (startIdx + 2) + " / " + (endIdx + 3)";
         pill.style.zIndex = 5;
-
+    
         const title = document.createElement("div");
         title.className = "task-title";
         title.textContent = projectName;
         pill.appendChild(title);
-
+    
         const text = document.createElement("div");
         text.className = "task-text";
         text.textContent = task.text;
         pill.appendChild(text);
-
+    
         const range = document.createElement("div");
         range.className = "task-range";
         range.textContent = `${task.task_date} 〜 ${task.end_date || task.task_date}`;
         pill.appendChild(range);
-
+    
         const actions = document.createElement("div");
         actions.className = "task-actions";
         const doneBtn = document.createElement("button");
@@ -519,10 +601,11 @@
         doneBtn.addEventListener("click", () => completeTask(task));
         actions.appendChild(doneBtn);
         pill.appendChild(actions);
-
+    
         ganttGrid.appendChild(pill);
       }
     }
+
 
     async function addTask() {
       const text = taskInput.value.trim();
