@@ -211,6 +211,14 @@ body {
   font-size: 12px;
   color: #5f6368;
 }
+.task-pill {
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.task-pill:hover {
+  filter: brightness(1.08);
+  cursor: pointer;
+}
 
 /* Modal */
 .modal-overlay {
