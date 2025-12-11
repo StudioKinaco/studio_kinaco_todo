@@ -120,6 +120,26 @@ body {
   position: relative;
   min-height: 28px;
 }
+/* 今日の行ハイライト */
+.gantt-day-cell.today-row {
+  background: #fff8e1;         /* 薄い黄色 */
+  font-weight: 600;
+}
+
+.gantt-slot.today-row {
+  background: #fffdf3;
+}
+
+/* ダークモード時の今日ハイライト */
+@media (prefers-color-scheme: dark) {
+  .gantt-day-cell.today-row {
+    background: #3b3220;
+  }
+  .gantt-slot.today-row {
+    background: #363023;
+  }
+}
+
 
 /* Task pill */
 .task-pill {
