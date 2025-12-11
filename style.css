@@ -187,9 +187,12 @@ body {
 .task-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 4px;
   margin-top: 2px;
 }
-.task-done-btn {
+
+.task-done-btn,
+.task-edit-btn {
   border-radius: 999px;
   border: none;
   padding: 1px 8px;
@@ -197,6 +200,10 @@ body {
   background: rgba(0,0,0,0.2);
   color: #fff;
   cursor: pointer;
+}
+
+.task-edit-btn {
+  background: rgba(0,0,0,0.35);
 }
 
 .empty-msg {
