@@ -101,17 +101,12 @@ body {
   left: 0;
   z-index: 3;
 }
-.gantt-day-cell {
-  padding: 6px 8px;
-  font-size: 11px;
-  border-bottom: 1px solid #eee;
-  border-right: 1px solid #eee;
-  background: #ffffff;
+.gantt-day-cell,
+.gantt-header-cell.date-header {
   position: sticky;
   left: 0;
-  z-index: 2;
-  box-sizing: border-box;
-  white-space: nowrap;
+  z-index: 200;      /* ← タスクより前面に */
+  background: #2d2f31; /* ダークモード時の背景を維持 */
 }
 .gantt-slot {
   border-bottom: 1px solid #eee;
