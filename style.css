@@ -129,6 +129,14 @@ body {
 .gantt-slot.today-row {
   background: #fffdf3;
 }
+.gantt-grid {
+  /* JS で行高さを生成するけど、最終行の高さはこの CSS が適用される */
+}
+
+.gantt-row-height {
+  height: 80px !important;
+  min-height: 80px !important;
+}
 
 /* ダークモード時の今日ハイライト */
 @media (prefers-color-scheme: dark) {
