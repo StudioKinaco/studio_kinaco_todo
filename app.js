@@ -26,6 +26,7 @@ const confirmOkBtn = document.getElementById("confirm-ok");
 
 let allTasks = [];
 let pendingDeleteTask = null;
+let editingTask = null; // ← 編集対象のタスク
 
 // ===== 色設定 =====
 const PROJECT_COLORS = [
@@ -78,14 +79,41 @@ function dateRange(start, end) {
   return out;
 }
 
-// ===== モーダル制御 =====
-function openTaskModal() {
+// ===== モーダル制御（新規／編集） =====
+function openTaskModalForNew() {
+  editingTask = null;
+  addBtn.textContent = "追加";
+  setStatus("");
+  // 初期値
+  projectInput.value = projectInput.value || "";
+  taskInput.value = "";
+  if (!startInput.value) startInput.value = todayISO();
+  if (!endInput.value) endInput.value = startInput.value || todayISO();
+
   taskModal.classList.remove("hidden");
   taskInput.focus();
 }
+
+function openTaskModalForEdit(task) {
+  editingTask = task;
+  addBtn.textContent = "更新";
+  setStatus("");
+
+  projectInput.value = task.project || "";
+  taskInput.value = task.text || "";
+  startInput.value = task.task_date || "";
+  endInput.value = task.end_date || task.task_date || "";
+
+  taskModal.classList.remove("hidden");
+  taskInput.focus();
+}
+
 function closeTaskModal() {
+  editingTask = null;
+  addBtn.textContent = "追加";
   taskModal.classList.add("hidden");
 }
+
 function openConfirmModal(task) {
   pendingDeleteTask = task;
   confirmMessageEl.textContent = `「${task.text}」を完了してOK？`;
@@ -185,7 +213,6 @@ function render(tasks) {
     return;
   }
 
-  // プロジェクトごとにグルーピング
   const projectGroups = {};
   for (const t of valid) {
     const name = (t.project || "(no project)").trim();
@@ -195,20 +222,18 @@ function render(tasks) {
   const projectNames = Object.keys(projectGroups)
     .sort((a, b) => a.localeCompare(b, "ja"));
 
-  // プロジェクトごとにレーン割り当て
-  const projectMeta = {}; // name -> { startCol, laneCount }
+  const projectMeta = {};
   let totalDataCols = 0;
 
   for (const name of projectNames) {
     const tasksForProject = projectGroups[name];
     const laneCount = assignLanesForProject(tasksForProject);
-    const startCol = 2 + totalDataCols; // 1列目は日付
+    const startCol = 2 + totalDataCols;
     projectMeta[name] = { startCol, laneCount };
     totalDataCols += laneCount;
     getProjectColor(name);
   }
 
-  // 日付レンジ
   let minStart = null;
   let maxEnd = null;
   for (const t of valid) {
@@ -226,19 +251,19 @@ function render(tasks) {
     return;
   }
 
-  const today = toDate(todayISO());
+  const todayDate = toDate(todayISO());
+  const todayIso = dateToISO(todayDate);
+
   let start = minStart;
-  if (today >= minStart && today <= maxEnd) start = today;
+  if (todayDate >= minStart && todayDate <= maxEnd) start = todayDate;
 
   const days = dateRange(start, maxEnd);
 
-  // Grid 定義
   ganttGrid.style.gridTemplateColumns =
     `120px repeat(${totalDataCols}, minmax(110px, 1fr))`;
   ganttGrid.style.gridTemplateRows =
     `40px repeat(${days.length}, 32px)`;
 
-  // ヘッダー: 日付列
   const dateHeader = document.createElement("div");
   dateHeader.className = "gantt-header-cell date-header";
   dateHeader.textContent = "Date";
@@ -246,7 +271,6 @@ function render(tasks) {
   dateHeader.style.gridRow = "1 / 2";
   ganttGrid.appendChild(dateHeader);
 
-  // ヘッダー: プロジェクト（複数レーンをまとめて1見出し扱い）
   for (const name of projectNames) {
     const meta = projectMeta[name];
     const cell = document.createElement("div");
@@ -257,29 +281,25 @@ function render(tasks) {
     ganttGrid.appendChild(cell);
   }
 
-  // 日付ラベル列
-// 日付ラベル列
-  const todayIso = dateToISO(todayDate);
-  
+  // 日付ラベル列（今日ハイライト）
   days.forEach((dayStr, i) => {
     const cell = document.createElement("div");
     cell.className = "gantt-day-cell";
     cell.textContent = dayStr;
     cell.style.gridColumn = "1 / 2";
     cell.style.gridRow = (i + 2) + " / " + (i + 3);
-  
-    // 今日ならハイライト
+
     if (dayStr === todayIso) {
       cell.classList.add("today-row");
     }
-  
+
     ganttGrid.appendChild(cell);
   });
 
-// 背景スロット
+  // 背景スロット（今日ハイライト）
   days.forEach((dayStr, i) => {
     const isToday = (dayStr === todayIso);
-  
+
     for (const name of projectNames) {
       const meta = projectMeta[name];
       for (let lane = 0; lane < meta.laneCount; lane++) {
@@ -288,20 +308,17 @@ function render(tasks) {
         slot.className = "gantt-slot";
         slot.style.gridColumn = `${col} / ${col + 1}`;
         slot.style.gridRow = (i + 2) + " / " + (i + 3);
-  
-        // 今日の行ならスロットもハイライト
+
         if (isToday) {
           slot.classList.add("today-row");
         }
-  
+
         ganttGrid.appendChild(slot);
       }
     }
   });
 
   // タスクバー
-  const todayDate = toDate(todayISO());
-
   for (const task of valid) {
     const projectName = (task.project || "(no project)").trim();
     const meta = projectMeta[projectName];
@@ -356,22 +373,29 @@ function render(tasks) {
     range.textContent = `${task.task_date} 〜 ${task.end_date || task.task_date}`;
     pill.appendChild(range);
 
-    // 完了ボタン
+    // アクションボタン（編集・完了）
     const actions = document.createElement("div");
     actions.className = "task-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "task-edit-btn";
+    editBtn.textContent = "編集";
+    editBtn.addEventListener("click", () => openTaskModalForEdit(task));
+    actions.appendChild(editBtn);
+
     const doneBtn = document.createElement("button");
     doneBtn.className = "task-done-btn";
     doneBtn.textContent = "完了";
     doneBtn.addEventListener("click", () => openConfirmModal(task));
     actions.appendChild(doneBtn);
-    pill.appendChild(actions);
 
+    pill.appendChild(actions);
     ganttGrid.appendChild(pill);
   }
 }
 
-// ===== タスク追加 =====
-async function addTask() {
+// ===== タスク追加／更新 =====
+async function submitTask() {
   const text = taskInput.value.trim();
   if (!text) return;
 
@@ -383,28 +407,43 @@ async function addTask() {
   if (!start && end) start = end;
   if (!end) end = start;
 
-  setStatus("追加中…");
+  setStatus(editingTask ? "更新中…" : "追加中…");
   addBtn.disabled = true;
 
-  const { error } = await supa.from("tasks").insert({
-    project,
-    task_date: start,
-    end_date: end,
-    text,
-    done: false,
-  });
+  let error;
+  if (!editingTask) {
+    ({ error } = await supa.from("tasks").insert({
+      project,
+      task_date: start,
+      end_date: end,
+      text,
+      done: false,
+    }));
+  } else {
+    ({ error } = await supa
+      .from("tasks")
+      .update({
+        project,
+        task_date: start,
+        end_date: end,
+        text,
+      })
+      .eq("id", editingTask.id));
+  }
 
   addBtn.disabled = false;
   if (error) {
     console.error(error);
-    setStatus("追加エラー");
+    setStatus(editingTask ? "更新エラー" : "追加エラー");
     return;
   }
 
-  // 入力クリア ＋ モーダル閉じる
-  projectInput.value = "";
-  taskInput.value = "";
-  // start/end はそのままでも便利なので維持
+  // 入力は軽く残しておくかどうかは好みだけど、
+  // とりあえずプロジェクトだけ残して他は空に
+  if (!editingTask) {
+    taskInput.value = "";
+  }
+
   setStatus("");
   closeTaskModal();
   await loadTasks();
@@ -429,10 +468,9 @@ async function completeTask(task) {
 
 // ===== イベントバインド =====
 openTaskModalBtn.addEventListener("click", () => {
-  if (!startInput.value) startInput.value = todayISO();
-  if (!endInput.value) endInput.value = todayISO();
-  openTaskModal();
+  openTaskModalForNew();
 });
+
 taskModalClose.addEventListener("click", closeTaskModal);
 taskModal.addEventListener("click", (e) => {
   if (e.target === taskModal) closeTaskModal();
@@ -444,11 +482,11 @@ todayBtn.addEventListener("click", () => {
   if (!endInput.value) endInput.value = t;
 });
 
-addBtn.addEventListener("click", addTask);
+addBtn.addEventListener("click", submitTask);
 taskInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
-    addTask();
+    submitTask();
   }
 });
 
