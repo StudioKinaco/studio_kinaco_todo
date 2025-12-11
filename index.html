@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>My TODO Gantt</title>
+  <title>STUDIO KINACO TODO LIST</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -28,34 +28,44 @@
         <h2 class="modal-title">タスクを追加</h2>
         <button id="task-modal-close" class="icon-btn" aria-label="閉じる">×</button>
       </div>
+
       <div class="modal-body">
-        <div class="form-row">
-          <label class="field">
+        <!-- プロジェクト ＋ タスク -->
+        <div class="form-row modal-row-main">
+          <div class="field">
             <span class="field-label">プロジェクト</span>
             <input id="project-input" list="project-list" />
-          </label>
-          <label class="field">
+          </div>
+          <div class="field">
             <span class="field-label">タスク</span>
-            <input id="task-input" type="text"
-                   placeholder="タスク内容を入力" autocomplete="off" />
-          </label>
+            <input
+              id="task-input"
+              type="text"
+              placeholder="タスク内容を入力"
+              autocomplete="off"
+            />
+          </div>
         </div>
+
+        <!-- 開始日 ＋ 締切 ＋ 今日ボタン -->
         <div class="form-row">
-          <label class="field">
+          <div class="field">
             <span class="field-label">開始日</span>
             <input id="start-input" type="date" />
-          </label>
-          <label class="field">
+          </div>
+          <div class="field">
             <span class="field-label">締切</span>
             <input id="end-input" type="date" />
-          </label>
+          </div>
           <button id="today-btn" type="button" class="secondary-btn small">
             開始＝今日
           </button>
         </div>
+
         <datalist id="project-list"></datalist>
         <div class="status" id="status"></div>
       </div>
+
       <div class="modal-footer">
         <button id="add-btn" type="button" class="primary-btn">追加</button>
       </div>
@@ -66,7 +76,7 @@
   <div id="confirm-modal" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-body">
-        <p id="confirm-message">このタスクを完了してOK？</p>
+        <p id="confirm-message">このタスクを削除しますか？</p>
       </div>
       <div class="modal-footer">
         <button id="confirm-cancel" class="secondary-btn">キャンセル</button>
