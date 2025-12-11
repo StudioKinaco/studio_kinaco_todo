@@ -1,8 +1,9 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>My TODO (Cloud)</title>
+  <title>My TODO Gantt</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
@@ -16,7 +17,7 @@
       color: #222;
     }
     .app {
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto;
       padding: 16px 12px 40px;
     }
@@ -29,6 +30,7 @@
       color: #666;
       margin-bottom: 12px;
     }
+
     .controls {
       display: flex;
       flex-direction: column;
@@ -42,6 +44,7 @@
     .row {
       display: flex;
       gap: 8px;
+      width: 100%;
     }
     .row > * {
       font-size: 14px;
@@ -69,6 +72,13 @@
       opacity: 0.5;
       cursor: default;
     }
+    .status {
+      font-size: 11px;
+      color: #666;
+      min-height: 14px;
+    }
+
+    /* Gantt 風タイムライン */
     .days {
       display: flex;
       flex-direction: column;
@@ -77,7 +87,7 @@
     .day {
       background: #fff;
       border-radius: 10px;
-      padding: 10px;
+      padding: 8px 10px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
     .day-header {
@@ -101,37 +111,42 @@
       overflow-x: auto;
       padding-bottom: 4px;
     }
-    .task-card {
+
+    .task-bar {
       min-width: 120px;
-      max-width: 180px;
+      max-width: 220px;
       border-radius: 8px;
       padding: 6px 8px;
-      border: 1px solid #ddd;
-      background: #fafafa;
+      border: 1px solid transparent;
+      background: #eee;
       display: flex;
       flex-direction: column;
       gap: 4px;
       flex-shrink: 0;
+      color: #fff;
     }
     .task-top {
       display: flex;
-      align-items: center;
-      gap: 4px;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .task-project {
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.9;
     }
     .task-text {
       font-size: 13px;
       line-height: 1.3;
       word-break: break-all;
-      flex: 1;
     }
-    .task-card.done {
-      opacity: 0.6;
-      text-decoration: line-through;
+    .task-meta {
+      font-size: 10px;
+      opacity: 0.9;
     }
     .task-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 4px;
     }
     .chip-btn {
       border-radius: 999px;
@@ -139,29 +154,14 @@
       padding: 2px 8px;
       font-size: 11px;
       cursor: pointer;
+      background: rgba(0,0,0,0.2);
+      color: inherit;
     }
-    .chip-done {
-      background: #34c759;
-      color: #fff;
-    }
-    .chip-undone {
-      background: #ff9f0a;
-      color: #fff;
-    }
-    .chip-delete {
-      background: #ff3b30;
-      color: #fff;
-    }
+
     .empty {
       font-size: 12px;
       color: #777;
       padding: 4px 0;
-    }
-    .status {
-      font-size: 11px;
-      color: #666;
-      margin-top: 6px;
-      min-height: 14px;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -172,36 +172,37 @@
         border-color: #3a3a3c;
         color: #f5f5f5;
       }
-      .task-card {
-        background: #2c2c2e;
-        border-color: #3a3a3c;
-      }
       .small, .day-count, .status { color: #aaa; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <h1>My TODO (Cloud)</h1>
+    <h1>My TODO Gantt</h1>
     <p class="small">
-      日付ごとにタスクを管理する個人用TODO。<br>
-      同じURLを開けばPC・スマホどこからでも同じDBを参照できます。
+      プロジェクト＋開始日〜締切で管理する縦型ガント風TODO。<br>
+      プロジェクト名は入力済みのものをドロップダウンから再利用できます。
     </p>
 
     <div class="controls">
       <div class="row">
-        <input id="date-input" type="date" />
-        <button id="today-btn" type="button">今日</button>
+        <input id="project-input" list="project-list" placeholder="プロジェクト名（例：映像 / 勉強 / 家のこと）">
+      </div>
+      <div class="row">
+        <input id="start-input" type="date" />
+        <input id="end-input" type="date" />
+        <button id="today-btn" type="button">開始＝今日</button>
       </div>
       <div class="row">
         <input
           id="task-input"
           type="text"
-          placeholder="タスクを入力して Enter でも追加"
+          placeholder="タスク内容を入力して Enter でも追加"
           autocomplete="off"
         />
         <button id="add-btn" type="button">追加</button>
       </div>
+      <datalist id="project-list"></datalist>
       <div class="status" id="status"></div>
     </div>
 
@@ -211,19 +212,31 @@
   <!-- Supabase CDN -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
-    // ==== ここを自分のプロジェクトの値に書き換える ====
+    // ==== ここを自分の Supabase プロジェクトの値に書き換える ====
     const SUPABASE_URL = "https://zmhgslnuzjorxbwdriuz.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptaGdzbG51empvcnhid2RyaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NjYxNzAsImV4cCI6MjA4MTA0MjE3MH0.TM5hJyBLWt6fFHQZ8rG_-_onROGdN5bH5qdmDgxREpg";
-    // ==================================================
+
+    // =======================================================
 
     const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const dateInput = document.getElementById("date-input");
-    const taskInput = document.getElementById("task-input");
-    const addBtn = document.getElementById("add-btn");
-    const todayBtn = document.getElementById("today-btn");
-    const statusEl = document.getElementById("status");
+    const projectInput = document.getElementById("project-input");
+    const startInput   = document.getElementById("start-input");
+    const endInput     = document.getElementById("end-input");
+    const taskInput    = document.getElementById("task-input");
+    const todayBtn     = document.getElementById("today-btn");
+    const addBtn       = document.getElementById("add-btn");
+    const statusEl     = document.getElementById("status");
     const daysContainer = document.getElementById("days-container");
+    const projectListEl = document.getElementById("project-list");
+
+    let allTasks = [];
+    const PROJECT_COLORS = [
+      "#ff9f0a", "#32ade6", "#ff375f",
+      "#30d158", "#af52de", "#ffd60a",
+      "#ff453a", "#64d2ff"
+    ];
+    const projectColorMap = {};
 
     function setStatus(msg) {
       statusEl.textContent = msg || "";
@@ -238,8 +251,43 @@
     }
 
     todayBtn.addEventListener("click", () => {
-      dateInput.value = todayISO();
+      const t = todayISO();
+      startInput.value = t;
+      if (!endInput.value) endInput.value = t;
     });
+
+    function getProjectColor(name) {
+      if (!name) return "#8e8e93";
+      if (!projectColorMap[name]) {
+        const idx = Object.keys(projectColorMap).length % PROJECT_COLORS.length;
+        projectColorMap[name] = PROJECT_COLORS[idx];
+      }
+      return projectColorMap[name];
+    }
+
+    function toDate(str) {
+      if (!str) return null;
+      const d = new Date(str);
+      if (Number.isNaN(d.getTime())) return null;
+      return d;
+    }
+
+    function dateToISO(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function dateRange(start, end) {
+      const out = [];
+      let cur = new Date(start.getTime());
+      while (cur <= end) {
+        out.push(dateToISO(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+      return out;
+    }
 
     async function loadTasks() {
       setStatus("読み込み中…");
@@ -248,7 +296,7 @@
       const { data, error } = await supa
         .from("tasks")
         .select("*")
-        .order("task_date", { ascending: false })
+        .order("task_date", { ascending: true })
         .order("created_at", { ascending: true });
 
       addBtn.disabled = false;
@@ -257,39 +305,90 @@
         setStatus("読み込みエラー");
         return;
       }
-      renderTasks(data || []);
+      allTasks = data || [];
+      render(allTasks);
       setStatus("");
     }
 
-    function groupByDate(tasks) {
-      const map = new Map();
-      for (const t of tasks) {
-        const key = t.task_date;
-        if (!map.has(key)) map.set(key, []);
-        map.get(key).push(t);
+    function populateProjectList(tasks) {
+      const names = Array.from(
+        new Set(
+          tasks
+            .map(t => t.project && t.project.trim())
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, "ja"));
+      projectListEl.innerHTML = "";
+      for (const name of names) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        projectListEl.appendChild(opt);
       }
-      // 日付降順で並び替え
-      const entries = Array.from(map.entries()).sort((a, b) => {
-        if (a[0] < b[0]) return 1;
-        if (a[0] > b[0]) return -1;
-        return 0;
-      });
-      return entries;
     }
 
-    function renderTasks(tasks) {
+    function render(tasks) {
       daysContainer.innerHTML = "";
-      if (!tasks.length) {
+
+      const withDates = tasks.filter(t => t.task_date);
+      if (!withDates.length) {
         const div = document.createElement("div");
         div.className = "empty";
-        div.textContent = "まだタスクがありません。まずは今日のタスクを1つ追加してみよう。";
+        div.textContent = "まだタスクがありません。開始日と締切を指定してタスクを追加してみてね。";
         daysContainer.appendChild(div);
+        populateProjectList(tasks);
         return;
       }
 
-      const grouped = groupByDate(tasks);
+      // project → color 割り当て
+      for (const t of tasks) {
+        if (t.project) getProjectColor(t.project.trim());
+      }
 
-      for (const [date, items] of grouped) {
+      // 表示する日付範囲（全タスクの最小開始日〜最大締切）
+      let minStart = null;
+      let maxEnd = null;
+
+      for (const t of withDates) {
+        const start = toDate(t.task_date);
+        const end = toDate(t.end_date || t.task_date);
+        if (!start || !end) continue;
+        if (!minStart || start < minStart) minStart = start;
+        if (!maxEnd || end > maxEnd) maxEnd = end;
+      }
+
+      if (!minStart || !maxEnd) {
+        const div = document.createElement("div");
+        div.className = "empty";
+        div.textContent = "日付の入ったタスクがありません。";
+        daysContainer.appendChild(div);
+        populateProjectList(tasks);
+        return;
+      }
+
+      const days = dateRange(minStart, maxEnd);
+
+      for (const dayStr of days) {
+        const dateObj = toDate(dayStr);
+
+        // この日が期間内に含まれるタスク
+        let dayTasks = withDates.filter(t => {
+          const s = toDate(t.task_date);
+          const e = toDate(t.end_date || t.task_date);
+          if (!s || !e) return false;
+          return s <= dateObj && e >= dateObj;
+        });
+
+        if (!dayTasks.length) continue; // タスクがない日はスキップ
+
+        // プロジェクト名→タスク名でソート
+        dayTasks = dayTasks.sort((a, b) => {
+          const pa = (a.project || "").toLowerCase();
+          const pb = (b.project || "").toLowerCase();
+          if (pa < pb) return -1;
+          if (pa > pb) return 1;
+          return (a.text || "").localeCompare(b.text || "", "ja");
+        });
+
         const dayDiv = document.createElement("div");
         dayDiv.className = "day";
 
@@ -298,12 +397,11 @@
 
         const dateSpan = document.createElement("div");
         dateSpan.className = "day-date";
-        dateSpan.textContent = date;
+        dateSpan.textContent = dayStr;
 
         const countSpan = document.createElement("div");
         countSpan.className = "day-count";
-        const doneCount = items.filter(t => t.done).length;
-        countSpan.textContent = `${doneCount}/${items.length} done`;
+        countSpan.textContent = `${dayTasks.length} task${dayTasks.length > 1 ? "s" : ""}`;
 
         header.appendChild(dateSpan);
         header.appendChild(countSpan);
@@ -311,58 +409,86 @@
         const row = document.createElement("div");
         row.className = "tasks-row";
 
-        for (const task of items) {
-          const card = document.createElement("div");
-          card.className = "task-card";
-          if (task.done) card.classList.add("done");
+        for (const task of dayTasks) {
+          const startStr = task.task_date;
+          const endStr = task.end_date || task.task_date;
+          const projectName = (task.project || "").trim();
+          const color = getProjectColor(projectName);
+
+          const bar = document.createElement("div");
+          bar.className = "task-bar";
+          bar.style.background = color;
+          bar.style.borderColor = color;
 
           const top = document.createElement("div");
           top.className = "task-top";
 
-          const text = document.createElement("div");
-          text.className = "task-text";
-          text.textContent = task.text;
+          if (projectName) {
+            const projEl = document.createElement("div");
+            projEl.className = "task-project";
+            projEl.textContent = projectName;
+            top.appendChild(projEl);
+          }
 
-          top.appendChild(text);
-          card.appendChild(top);
+          const textEl = document.createElement("div");
+          textEl.className = "task-text";
+          textEl.textContent = task.text;
+          top.appendChild(textEl);
+
+          const meta = document.createElement("div");
+          meta.className = "task-meta";
+          meta.textContent = `${startStr} 〜 ${endStr}`;
 
           const actions = document.createElement("div");
           actions.className = "task-actions";
 
           const doneBtn = document.createElement("button");
-          doneBtn.className = "chip-btn " + (task.done ? "chip-undone" : "chip-done");
-          doneBtn.textContent = task.done ? "戻す" : "完了";
-          doneBtn.addEventListener("click", () => toggleDone(task));
-
-          const delBtn = document.createElement("button");
-          delBtn.className = "chip-btn chip-delete";
-          delBtn.textContent = "削除";
-          delBtn.addEventListener("click", () => deleteTask(task));
+          doneBtn.className = "chip-btn";
+          doneBtn.textContent = "完了";
+          doneBtn.addEventListener("click", () => completeTask(task));
 
           actions.appendChild(doneBtn);
-          actions.appendChild(delBtn);
-          card.appendChild(actions);
 
-          row.appendChild(card);
+          bar.appendChild(top);
+          bar.appendChild(meta);
+          bar.appendChild(actions);
+
+          row.appendChild(bar);
         }
 
         dayDiv.appendChild(header);
         dayDiv.appendChild(row);
         daysContainer.appendChild(dayDiv);
       }
+
+      populateProjectList(tasks);
     }
 
     async function addTask() {
       const text = taskInput.value.trim();
-      let date = dateInput.value;
-      if (!date) date = todayISO();
       if (!text) return;
+
+      let start = startInput.value;
+      let end = endInput.value;
+      const project = projectInput.value.trim() || null;
+
+      if (!start && !end) {
+        start = todayISO();
+      }
+      if (!start && end) {
+        start = end;
+      }
+      if (!end) {
+        end = start;
+      }
 
       addBtn.disabled = true;
       setStatus("追加中…");
 
       const { error } = await supa.from("tasks").insert({
-        task_date: date,
+        project,
+        task_date: start, // 開始日として使用
+        end_date: end,    // 締切
         text,
         done: false,
       });
@@ -373,27 +499,13 @@
         setStatus("追加エラー");
         return;
       }
+
       taskInput.value = "";
       await loadTasks();
     }
 
-    async function toggleDone(task) {
-      setStatus("更新中…");
-      const { error } = await supa
-        .from("tasks")
-        .update({ done: !task.done })
-        .eq("id", task.id);
-
-      if (error) {
-        console.error(error);
-        setStatus("更新エラー");
-        return;
-      }
-      await loadTasks();
-    }
-
-    async function deleteTask(task) {
-      if (!confirm("削除してOK？")) return;
+    async function completeTask(task) {
+      if (!confirm("このタスクを完了（DBから削除）してOK？")) return;
       setStatus("削除中…");
       const { error } = await supa
         .from("tasks")
@@ -416,8 +528,9 @@
       }
     });
 
-    // 初期値で「今日」をセット
-    dateInput.value = todayISO();
+    // 初期値：開始日を今日に
+    startInput.value = todayISO();
+    endInput.value = todayISO();
     loadTasks();
   </script>
 </body>
