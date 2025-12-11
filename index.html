@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="ja">
 <head>
@@ -13,11 +12,11 @@
     body {
       margin: 0;
       padding: 0;
-      background: #f5f5f7;
-      color: #222;
+      background: #111;
+      color: #f5f5f5;
     }
     .app {
-      max-width: 760px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 16px 12px 40px;
     }
@@ -27,7 +26,7 @@
     }
     .small {
       font-size: 11px;
-      color: #666;
+      color: #aaa;
       margin-bottom: 12px;
     }
 
@@ -38,8 +37,7 @@
       margin-bottom: 16px;
       padding: 10px;
       border-radius: 10px;
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: #1c1c1e;
     }
     .row {
       display: flex;
@@ -54,8 +52,10 @@
       flex: 1;
       padding: 6px 8px;
       border-radius: 6px;
-      border: 1px solid #ccc;
+      border: 1px solid #3a3a3c;
       box-sizing: border-box;
+      background: #2c2c2e;
+      color: #f5f5f5;
     }
     button {
       padding: 6px 10px;
@@ -74,105 +74,117 @@
     }
     .status {
       font-size: 11px;
-      color: #666;
+      color: #aaa;
       min-height: 14px;
     }
 
-    /* Gantt 風タイムライン */
-    .days {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .day {
-      background: #fff;
+    /* Gantt grid layout */
+    .gantt-wrapper {
       border-radius: 10px;
-      padding: 8px 10px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: auto;
+      background: #1c1c1e;
     }
-    .day-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 6px;
-      gap: 8px;
+    .gantt-inner {
+      min-width: 600px;
     }
-    .day-date {
-      font-size: 14px;
-      font-weight: 600;
+    .gantt-header {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(90px, 1fr);
+      border-bottom: 1px solid #3a3a3c;
     }
-    .day-count {
+    .gantt-header-cell {
+      padding: 6px 6px;
       font-size: 11px;
-      color: #666;
+      font-weight: 600;
+      text-align: center;
+      border-left: 1px solid #3a3a3c;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .tasks-row {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 4px;
+    .gantt-header-cell.sticky {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #1c1c1e;
+      text-align: left;
     }
 
-    .task-bar {
-      min-width: 120px;
-      max-width: 220px;
-      border-radius: 8px;
-      padding: 6px 8px;
-      border: 1px solid transparent;
-      background: #eee;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex-shrink: 0;
-      color: #fff;
+    .gantt-body-row {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(90px, 1fr);
+      border-bottom: 1px solid #2c2c2e;
     }
-    .task-top {
+    .gantt-date-cell {
+      padding: 6px 6px;
+      font-size: 11px;
+      border-left: 1px solid #3a3a3c;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: #1c1c1e;
+      white-space: nowrap;
+    }
+    .gantt-project-cell {
+      padding: 4px 4px;
+      border-left: 1px solid #2c2c2e;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gantt-project-cell.empty {
+      background: #1c1c1e;
+    }
+    .gantt-project-pill {
+      width: 100%;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 11px;
+      line-height: 1.3;
+      color: #fff;
       display: flex;
       flex-direction: column;
       gap: 2px;
+      box-sizing: border-box;
     }
-    .task-project {
-      font-size: 11px;
+    .pill-title {
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pill-task {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       opacity: 0.9;
     }
-    .task-text {
-      font-size: 13px;
-      line-height: 1.3;
-      word-break: break-all;
-    }
-    .task-meta {
+    .pill-range {
       font-size: 10px;
       opacity: 0.9;
     }
-    .task-actions {
+    .pill-actions {
       display: flex;
       justify-content: flex-end;
+      margin-top: 2px;
     }
-    .chip-btn {
+    .pill-btn {
       border-radius: 999px;
       border: none;
-      padding: 2px 8px;
-      font-size: 11px;
+      padding: 1px 8px;
+      font-size: 10px;
+      background: rgba(0,0,0,0.25);
+      color: #fff;
       cursor: pointer;
-      background: rgba(0,0,0,0.2);
-      color: inherit;
     }
 
-    .empty {
+    .empty-msg {
       font-size: 12px;
-      color: #777;
-      padding: 4px 0;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      body { background: #111; color: #f5f5f5; }
-      .controls, .day { background: #1c1c1e; box-shadow: none; }
-      input[type="date"], input[type="text"] {
-        background: #2c2c2e;
-        border-color: #3a3a3c;
-        color: #f5f5f5;
-      }
-      .small, .day-count, .status { color: #aaa; }
+      color: #aaa;
+      padding: 10px;
     }
   </style>
 </head>
@@ -180,7 +192,7 @@
   <div class="app">
     <h1>My TODO Gantt</h1>
     <p class="small">
-      プロジェクト＋開始日〜締切で管理する縦型ガント風TODO。<br>
+      縦が日付（今日ベース）、横がプロジェクトの簡易ガントチャート。<br>
       プロジェクト名は入力済みのものをドロップダウンから再利用できます。
     </p>
 
@@ -206,17 +218,19 @@
       <div class="status" id="status"></div>
     </div>
 
-    <div id="days-container" class="days"></div>
+    <div class="gantt-wrapper">
+      <div class="gantt-inner" id="gantt-inner">
+        <!-- header + rows を JS で描画 -->
+      </div>
+    </div>
   </div>
 
-  <!-- Supabase CDN -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
-    // ==== ここを自分の Supabase プロジェクトの値に書き換える ====
-    const SUPABASE_URL = "https://zmhgslnuzjorxbwdriuz.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptaGdzbG51empvcnhid2RyaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NjYxNzAsImV4cCI6MjA4MTA0MjE3MH0.TM5hJyBLWt6fFHQZ8rG_-_onROGdN5bH5qdmDgxREpg";
-
-    // =======================================================
+    // ==== 自分の Supabase 情報に書き換え ====
+    const SUPABASE_URL = "https://your-project-id.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+    // =========================================
 
     const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -227,10 +241,11 @@
     const todayBtn     = document.getElementById("today-btn");
     const addBtn       = document.getElementById("add-btn");
     const statusEl     = document.getElementById("status");
-    const daysContainer = document.getElementById("days-container");
+    const ganttInner   = document.getElementById("gantt-inner");
     const projectListEl = document.getElementById("project-list");
 
     let allTasks = [];
+
     const PROJECT_COLORS = [
       "#ff9f0a", "#32ade6", "#ff375f",
       "#30d158", "#af52de", "#ffd60a",
@@ -257,31 +272,31 @@
     });
 
     function getProjectColor(name) {
-      if (!name) return "#8e8e93";
-      if (!projectColorMap[name]) {
+      const key = name || "(no project)";
+      if (!projectColorMap[key]) {
         const idx = Object.keys(projectColorMap).length % PROJECT_COLORS.length;
-        projectColorMap[name] = PROJECT_COLORS[idx];
+        projectColorMap[key] = PROJECT_COLORS[idx];
       }
-      return projectColorMap[name];
+      return projectColorMap[key];
     }
 
     function toDate(str) {
       if (!str) return null;
       const d = new Date(str);
       if (Number.isNaN(d.getTime())) return null;
+      // normalize to local midnight
+      d.setHours(0,0,0,0);
       return d;
     }
-
     function dateToISO(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
       return `${y}-${m}-${day}`;
     }
-
     function dateRange(start, end) {
       const out = [];
-      let cur = new Date(start.getTime());
+      const cur = new Date(start.getTime());
       while (cur <= end) {
         out.push(dateToISO(cur));
         cur.setDate(cur.getDate() + 1);
@@ -314,7 +329,7 @@
       const names = Array.from(
         new Set(
           tasks
-            .map(t => t.project && t.project.trim())
+            .map(t => (t.project || "").trim())
             .filter(Boolean)
         )
       ).sort((a, b) => a.localeCompare(b, "ja"));
@@ -327,141 +342,137 @@
     }
 
     function render(tasks) {
-      daysContainer.innerHTML = "";
+      ganttInner.innerHTML = "";
+      populateProjectList(tasks);
 
-      const withDates = tasks.filter(t => t.task_date);
-      if (!withDates.length) {
+      const validTasks = tasks.filter(t => t.task_date);
+      if (!validTasks.length) {
         const div = document.createElement("div");
-        div.className = "empty";
-        div.textContent = "まだタスクがありません。開始日と締切を指定してタスクを追加してみてね。";
-        daysContainer.appendChild(div);
-        populateProjectList(tasks);
+        div.className = "empty-msg";
+        div.textContent = "まだタスクがありません。プロジェクト＋開始日と締切を入れてタスクを追加してみてね。";
+        ganttInner.appendChild(div);
         return;
       }
 
-      // project → color 割り当て
-      for (const t of tasks) {
-        if (t.project) getProjectColor(t.project.trim());
-      }
+      // プロジェクト一覧
+      const projectNames = Array.from(
+        new Set(
+          validTasks.map(t => (t.project || "(no project)").trim())
+        )
+      ).sort((a, b) => a.localeCompare(b, "ja"));
 
-      // 表示する日付範囲（全タスクの最小開始日〜最大締切）
+      // 色割り当て
+      projectNames.forEach(name => getProjectColor(name));
+
+      // 日付範囲
       let minStart = null;
       let maxEnd = null;
-
-      for (const t of withDates) {
-        const start = toDate(t.task_date);
-        const end = toDate(t.end_date || t.task_date);
-        if (!start || !end) continue;
-        if (!minStart || start < minStart) minStart = start;
-        if (!maxEnd || end > maxEnd) maxEnd = end;
+      for (const t of validTasks) {
+        const s = toDate(t.task_date);
+        const e = toDate(t.end_date || t.task_date);
+        if (!s || !e) continue;
+        if (!minStart || s < minStart) minStart = s;
+        if (!maxEnd || e > maxEnd) maxEnd = e;
       }
-
       if (!minStart || !maxEnd) {
         const div = document.createElement("div");
-        div.className = "empty";
+        div.className = "empty-msg";
         div.textContent = "日付の入ったタスクがありません。";
-        daysContainer.appendChild(div);
-        populateProjectList(tasks);
+        ganttInner.appendChild(div);
         return;
       }
 
-      const days = dateRange(minStart, maxEnd);
+      // 今日を優先して上に
+      const today = toDate(todayISO());
+      let start = minStart;
+      if (today >= minStart && today <= maxEnd) start = today;
 
+      const days = dateRange(start, maxEnd);
+
+      // ヘッダー行
+      const header = document.createElement("div");
+      header.className = "gantt-header";
+
+      const dateHead = document.createElement("div");
+      dateHead.className = "gantt-header-cell sticky";
+      dateHead.textContent = "Date";
+      header.appendChild(dateHead);
+
+      for (const p of projectNames) {
+        const cell = document.createElement("div");
+        cell.className = "gantt-header-cell";
+        cell.textContent = p;
+        header.appendChild(cell);
+      }
+      ganttInner.appendChild(header);
+
+      // 本体行
       for (const dayStr of days) {
         const dateObj = toDate(dayStr);
-
-        // この日が期間内に含まれるタスク
-        let dayTasks = withDates.filter(t => {
-          const s = toDate(t.task_date);
-          const e = toDate(t.end_date || t.task_date);
-          if (!s || !e) return false;
-          return s <= dateObj && e >= dateObj;
-        });
-
-        if (!dayTasks.length) continue; // タスクがない日はスキップ
-
-        // プロジェクト名→タスク名でソート
-        dayTasks = dayTasks.sort((a, b) => {
-          const pa = (a.project || "").toLowerCase();
-          const pb = (b.project || "").toLowerCase();
-          if (pa < pb) return -1;
-          if (pa > pb) return 1;
-          return (a.text || "").localeCompare(b.text || "", "ja");
-        });
-
-        const dayDiv = document.createElement("div");
-        dayDiv.className = "day";
-
-        const header = document.createElement("div");
-        header.className = "day-header";
-
-        const dateSpan = document.createElement("div");
-        dateSpan.className = "day-date";
-        dateSpan.textContent = dayStr;
-
-        const countSpan = document.createElement("div");
-        countSpan.className = "day-count";
-        countSpan.textContent = `${dayTasks.length} task${dayTasks.length > 1 ? "s" : ""}`;
-
-        header.appendChild(dateSpan);
-        header.appendChild(countSpan);
-
         const row = document.createElement("div");
-        row.className = "tasks-row";
+        row.className = "gantt-body-row";
 
-        for (const task of dayTasks) {
-          const startStr = task.task_date;
-          const endStr = task.end_date || task.task_date;
-          const projectName = (task.project || "").trim();
-          const color = getProjectColor(projectName);
+        const dateCell = document.createElement("div");
+        dateCell.className = "gantt-date-cell";
+        dateCell.textContent = dayStr;
+        row.appendChild(dateCell);
 
-          const bar = document.createElement("div");
-          bar.className = "task-bar";
-          bar.style.background = color;
-          bar.style.borderColor = color;
+        for (const projectName of projectNames) {
+          const cell = document.createElement("div");
+          cell.className = "gantt-project-cell";
 
-          const top = document.createElement("div");
-          top.className = "task-top";
+          const cellTasks = validTasks.filter(t => {
+            const pName = (t.project || "(no project)").trim();
+            if (pName !== projectName) return false;
+            const s = toDate(t.task_date);
+            const e = toDate(t.end_date || t.task_date);
+            if (!s || !e) return false;
+            return s <= dateObj && e >= dateObj;
+          });
 
-          if (projectName) {
-            const projEl = document.createElement("div");
-            projEl.className = "task-project";
-            projEl.textContent = projectName;
-            top.appendChild(projEl);
+          if (!cellTasks.length) {
+            cell.classList.add("empty");
+          } else {
+            const mainTask = cellTasks[0]; // とりあえず1件代表
+            const color = getProjectColor(projectName);
+
+            const pill = document.createElement("div");
+            pill.className = "gantt-project-pill";
+            pill.style.background = color;
+
+            const title = document.createElement("div");
+            title.className = "pill-title";
+            title.textContent = projectName;
+            pill.appendChild(title);
+
+            const taskLabel = document.createElement("div");
+            taskLabel.className = "pill-task";
+            taskLabel.textContent = mainTask.text;
+            pill.appendChild(taskLabel);
+
+            const range = document.createElement("div");
+            range.className = "pill-range";
+            range.textContent = `${mainTask.task_date} 〜 ${mainTask.end_date || mainTask.task_date}`;
+            pill.appendChild(range);
+
+            const actions = document.createElement("div");
+            actions.className = "pill-actions";
+
+            const doneBtn = document.createElement("button");
+            doneBtn.className = "pill-btn";
+            doneBtn.textContent = "完了";
+            doneBtn.addEventListener("click", () => completeTask(mainTask));
+            actions.appendChild(doneBtn);
+
+            pill.appendChild(actions);
+            cell.appendChild(pill);
           }
 
-          const textEl = document.createElement("div");
-          textEl.className = "task-text";
-          textEl.textContent = task.text;
-          top.appendChild(textEl);
-
-          const meta = document.createElement("div");
-          meta.className = "task-meta";
-          meta.textContent = `${startStr} 〜 ${endStr}`;
-
-          const actions = document.createElement("div");
-          actions.className = "task-actions";
-
-          const doneBtn = document.createElement("button");
-          doneBtn.className = "chip-btn";
-          doneBtn.textContent = "完了";
-          doneBtn.addEventListener("click", () => completeTask(task));
-
-          actions.appendChild(doneBtn);
-
-          bar.appendChild(top);
-          bar.appendChild(meta);
-          bar.appendChild(actions);
-
-          row.appendChild(bar);
+          row.appendChild(cell);
         }
 
-        dayDiv.appendChild(header);
-        dayDiv.appendChild(row);
-        daysContainer.appendChild(dayDiv);
+        ganttInner.appendChild(row);
       }
-
-      populateProjectList(tasks);
     }
 
     async function addTask() {
@@ -487,8 +498,8 @@
 
       const { error } = await supa.from("tasks").insert({
         project,
-        task_date: start, // 開始日として使用
-        end_date: end,    // 締切
+        task_date: start,
+        end_date: end,
         text,
         done: false,
       });
@@ -528,7 +539,7 @@
       }
     });
 
-    // 初期値：開始日を今日に
+    // 初期値
     startInput.value = todayISO();
     endInput.value = todayISO();
     loadTasks();
