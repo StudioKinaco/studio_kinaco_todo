@@ -258,17 +258,28 @@ function render(tasks) {
   }
 
   // 日付ラベル列
+// 日付ラベル列
+  const todayIso = dateToISO(todayDate);
+  
   days.forEach((dayStr, i) => {
     const cell = document.createElement("div");
     cell.className = "gantt-day-cell";
     cell.textContent = dayStr;
     cell.style.gridColumn = "1 / 2";
     cell.style.gridRow = (i + 2) + " / " + (i + 3);
+  
+    // 今日ならハイライト
+    if (dayStr === todayIso) {
+      cell.classList.add("today-row");
+    }
+  
     ganttGrid.appendChild(cell);
   });
 
-  // 背景スロット
-  days.forEach((_, i) => {
+// 背景スロット
+  days.forEach((dayStr, i) => {
+    const isToday = (dayStr === todayIso);
+  
     for (const name of projectNames) {
       const meta = projectMeta[name];
       for (let lane = 0; lane < meta.laneCount; lane++) {
@@ -277,6 +288,12 @@ function render(tasks) {
         slot.className = "gantt-slot";
         slot.style.gridColumn = `${col} / ${col + 1}`;
         slot.style.gridRow = (i + 2) + " / " + (i + 3);
+  
+        // 今日の行ならスロットもハイライト
+        if (isToday) {
+          slot.classList.add("today-row");
+        }
+  
         ganttGrid.appendChild(slot);
       }
     }
