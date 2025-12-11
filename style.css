@@ -262,4 +262,40 @@ input[type="date"]:focus,
 input[list]:focus {
   outline: none;
   border-color: #1a73e8;
-  box
+  box-shadow: 0 0 0 1px #1a73e8;
+}
+
+.status {
+  font-size: 11px;
+  color: #5f6368;
+  min-height: 14px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  body { background: #202124; color: #e8eaed; }
+  .topbar, .gantt-card {
+    background: #2d2f31;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  input[type="text"],
+  input[type="date"],
+  input[list],
+  .modal {
+    background: #2d2f31;
+    color: #e8eaed;
+    border-color: #5f6368;
+  }
+  .gantt-header-cell {
+    background: #3c4043;
+    border-color: #5f6368;
+  }
+  .gantt-day-cell, .gantt-slot {
+    background: #2d2f31;
+    border-color: #3c4043;
+  }
+  .empty-msg { color: #9aa0a6; }
+  .modal {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  }
+}
