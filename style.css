@@ -224,7 +224,7 @@ body {
 }
 
 .task-pill:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.2);
   cursor: pointer;
 }
 
